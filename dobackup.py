@@ -51,8 +51,8 @@ class bkpcontrol:
 		self.dnes = date.today()
 		self.den = int(self.dnes.strftime('%w'))
 		self.denMesice = int(self.dnes.strftime('%d'))
-		self.tyden = int(self.dnes.strftime('%d'))
-		self.mesic = int(self.dnes.strftime('%W'))
+		self.tyden = int(self.dnes.strftime('%W'))
+		self.mesic = int(self.dnes.strftime('%m'))
 		self.rok = int(self.dnes.strftime('%Y'))
 
 		if self.den != 0 and self.denMesice != 01:
@@ -71,7 +71,7 @@ class bkpcontrol:
 			self.numTypZalohy = 2
 			self.chrTypZalohy = "kompletní měsíční"
 			self.globalCommand = ""
-			self.globalBkpFile = self.config.get('global','backupTo') + "/data-mesic-" + str(self.mesic) + "-" + str(rok) + self.komprString
+			self.globalBkpFile = self.config.get('global','backupTo') + "/data-mesic-" + str(self.mesic) + "-" + str(self.rok) + self.komprString
 
 	def denCesky(self,den):
 		if den == 0: pom = "nedele"

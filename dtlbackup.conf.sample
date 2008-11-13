@@ -9,7 +9,7 @@
 
 [global]
 #backupTo parametr nastavuje kam se bude provádět zálohování.
-backupTo = /home/bubukmen/testzalohy
+backupTo = /backup
 #compression nastavuje kompresi výsledných záloh. Může být bzip, gzip nebo none.
 compression = bzip
 
