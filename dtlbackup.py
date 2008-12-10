@@ -15,10 +15,11 @@ Parametry:
 
 -h			Vyvolá tuto nápovědu
 -c [SOUBOR]		Použije jiný konfigurační soubor než /etc/dtlbackup/dtlbackup.conf
+-F			Spustí vynucenou kompletní zálohu
 
 	'''
 
-def rozcestnik():
+def rozcestnik(vynucena):
 	for i in range(len(sys.argv)):
 		if sys.argv[i] == "-h":
 			napoveda()
@@ -28,7 +29,7 @@ def rozcestnik():
 			if os.getuid() == 0:
 				if os.access(sys.argv[i+1], 4):
 					try:
-						bkp = bkpcontrol(sys.argv[i+1])
+						bkp = bkpcontrol(sys.argv[i+1], vynucena)
 					except IndexError:
 						print "Nebyl zadán parametr konfiguračního souboru"
 						sys.exit()
@@ -37,15 +38,23 @@ def rozcestnik():
 			else:
 				print "Zálohovací program se musí spouštět pod uživatelem root!"
 
+#Začátek programu!
+
+vynucena = "N"
+
+for i in range(len(sys.argv)):
+	if sys.argv[i] == "-F":
+		vynucena = "Y"
+
 if len(sys.argv) == 1:
 	if os.getuid() == 0:
 		if os.access('/etc/dtlbackup/dtlbackup.conf', 4):
-			bpk = bkpcontrol('/etc/dtlbackup/dtlbackup.conf')
+			bpk = bkpcontrol('/etc/dtlbackup/dtlbackup.conf', vynucena)
 		else:
 			print "Nelze nalézt soubor /etc/dtlbackup/dtlbackup.conf"
 	else:
 		print "Zálohovací program se musí spouštět pod uživatelem root!"
 
 else:
-	rozcestnik()
+	rozcestnik(vynucena)
 
