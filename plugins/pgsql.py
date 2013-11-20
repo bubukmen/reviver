@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-import os,ConfigParser,nastroje
+import os,configparser,reviverTools
 
 class action:
 	def __init__ (self, configFile, vynucena, denSpusteni):
-		cnfP = ConfigParser.ConfigParser()
+		cnfP = configparser.ConfigParser()
 		cnfP.read(configFile)
 		backupTo = cnfP.get('global', 'backupTo')
 		pgDumpCommand = cnfP.get('pgsql', 'pgDumpCommand')
@@ -13,8 +13,9 @@ class action:
 		pgUser = cnfP.get('pgsql', 'pgUser')
 		pgPort = cnfP.get('pgsql', 'pgPort')
 
-		komprFlag, komprString, komprString2, komprString3 = nastroje.komprese(cnfP.get('global', 'compression'))
-		backupString = "PGPASSFILE=\"" + pgpassFile + "\" " + pgDumpCommand + " -p " + pgPort + " -U " + pgUser + komprString2 + backupTo + "/pgsql" + komprString3
-		print "Zálohuji databázi Postgresql do souboru " + backupTo + "/pgsql" + komprString3
+		komprFlag, komprString, komprString2, komprString3 = reviverTools.komprese(cnfP.get('global', 'compression'))
+		soubor = reviverTools.nazevSouboru('pgsql', denSpusteni, backupTo, komprString3)
+		backupString = "PGPASSFILE=\"" + pgpassFile + "\" " + pgDumpCommand + " -p " + pgPort + " -U " + pgUser + komprString2 + soubor
+		print("Making Postgresql backup to " + soubor + ' file')
 		os.system(backupString)
 		

@@ -10,12 +10,12 @@
 [global]
 #backupTo parametr nastavuje kam se bude provádět zálohování.
 backupTo = /backup
-#compression nastavuje kompresi výsledných záloh. Může být bzip, gzip, lzma nebo none.
-compression = bzip
+#compression nastavuje kompresi výsledných záloh. Může být bzip, gzip, xz nebo none.
+compression = xz
 #logFile nastavuje kam logovat. Pokud není definován, loguje se standardně do syslogu.
 logFile = /var/log/dtlbackup.log
-#syncWithRemote = smbtransfer - V tuto chvíli prozatím nefunkční
-remoteFilesystem = smbtransfer
+#syncWithRemote = smbtransfer - V tuto chvíli ještě není implementováno
+#remoteFilesystem = smbtransfer
 
 [files]
 #sourceList je soubor obsahující adresáře, které mají být zálohovány.
@@ -44,7 +44,7 @@ pgUser = postgres
 pgPort = 5432
 
 #smbtransfer slouží k nastavení přesunu dat na vzdálené uložiště protokolem SMB (Samba)
-#V tuto chvíli nepoužitelné!!!
+#V tuto chvíli ještě není implementováno
 #[smbtransfer]
 #smbServer = server
 #smbUser = uzivatel

@@ -26,48 +26,22 @@ def typZalohy(dnes, vynucena):
 	if vynucena == 'Y':
 		vysledek = 3 #vynucená záloha
 	else:
-		if den != 0 and denMesice != 01: vysledek = 0 #denní přírůstková
-		if den == 0 and denMesice != 01: vysledek = 1 #týdenní přírůstková
-		if denMesice == 01: vysledek = 2 #měsíční
+		if den != 0 and denMesice != 1: vysledek = 0 #denní přírůstková
+		if den == 0 and denMesice != 1: vysledek = 1 #týdenní přírůstková
+		if denMesice == 1: vysledek = 2 #měsíční
 	return vysledek
 
-def nazevSouboru(dnes, typ, cesta, suffix):
-	vysledek = ""
+def nazevSouboru(prefix, dnes, cesta, suffix, typ=0):
+	vysledek = ''
 	den, denMesice, tyden, mesic, rok = vratDatumHodnoty(dnes)
-	if typ == 3: vysledek = cesta + "/vynucena_" + str(denMesice) + "_" + str(mesic) + "_" + str(rok) + suffix
-	if typ == 2: vysledek = cesta + "/" + mesicCesky(mesic) + "_" + str(rok) + suffix
-	if typ == 1: vysledek = cesta + "/tyden_" + str(tyden) + suffix
-	if typ == 0: vysledek = cesta + "/" + denCesky(den) + suffix
-
-	return vysledek
-
-def mesicCesky(mesic):
-	if mesic == 1: vysledek = "leden"
-	if mesic == 2: vysledek = "unor"
-	if mesic == 3: vysledek = "brezen"
-	if mesic == 4: vysledek = "duben"
-	if mesic == 5: vysledek = "kveten"
-	if mesic == 6: vysledek = "cerven"
-	if mesic == 7: vysledek = "cervenec"
-	if mesic == 8: vysledek = "srpen"
-	if mesic == 9: vysledek = "zari"
-	if mesic == 10: vysledek = "rijen"
-	if mesic == 11: vysledek = "listopad"
-	if mesic == 12: vysledek = "prosinec"
-	return vysledek
-
-def denCesky(den):
-	if den == 0: vysledek = "nedele"
-	if den == 1: vysledek = "pondeli"
-	if den == 2: vysledek = "utery"
-	if den == 3: vysledek = "streda"
-	if den == 4: vysledek = "ctvrtek"
-	if den == 5: vysledek = "patek"
-	if den == 6: vysledek = "sobota"
+	if typ == 3: vysledek = cesta + '/' + prefix + '_' + dnes.strftime('%Y-%m-%d') + '-forced' + suffix
+	if typ == 2: vysledek = cesta + '/' + prefix + '_' + dnes.strftime('%Y-%m-%d') + '-monthly' + suffix
+	if typ == 1: vysledek = cesta + '/' + prefix + '_' + dnes.strftime('%Y-%m-%d') + '-weekly' + suffix
+	if typ == 0: vysledek = cesta + '/' + prefix + '_' + dnes.strftime('%Y-%m-%d') + '-daily' + suffix
 	return vysledek
 
 def komprese(typ):
-	if typ == 'lzma':
+	if typ == 'xz':
 		komprFlag = "J"
 		komprString = ".tar.xz"
 		komprString2 = " | xz > "
@@ -88,7 +62,7 @@ def komprese(typ):
 		komprString2 = " > "
 		komprString3 = ".sql"
 	else:
-		print "Neznámá hodnota \"" + typ + "\". Komprese bude vypnuta."
+		print("Neznámá hodnota \"" + typ + "\". Komprese bude vypnuta.")
 		komprFlag = ""
 		komprString = ".tar"
 		komprString2 = " > "

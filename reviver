@@ -1,0 +1,77 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import sys,os,getopt,configparser,reviverTools
+from datetime import datetime
+
+def napoveda():
+	print('''
+Reviver is modular application for making backup of your files, databases etc. on your server or PC.
+Usage: reviver [flags]
+Flags:
+
+-h, --help                            Show this help message
+-c <filename>, --config <filename>    Use different configuration file than /etc/reviver/reviver.conf
+-F, --force                           Force full backup and name it as force
+	''')
+	sys.exit(0)
+
+def importTridy(name):
+	mod = __import__(name)
+	components = name.split('.')
+	for comp in components[1:]:
+		mod = getattr(mod, comp)
+	return mod
+
+def main():
+	vynucena = 'N'
+	demon = 'N'
+	configFile = '/etc/reviver/reviver.conf'
+
+	try:
+		opts, args = getopt.getopt(sys.argv[1:], 'hc:F', ['help', 'config=', 'force'])
+	except getopt.error as msg:
+		napoveda()
+	for o, a in opts:
+		if o in ('-h', '--help'):
+			napoveda()
+		elif o in ('-c', '--config'):
+			configFile = a
+		elif o in ('-F', '--force'):
+			vynucena = 'Y'
+
+	if os.getuid() == 0:
+		if os.access(configFile, os.F_OK):
+			if os.access(configFile, os.R_OK):
+				cnfP = configparser.ConfigParser()
+				try:
+					cnfP.read(configFile)
+				except ConfigParser.MissingSectionHeaderError:
+					print('Error, cannot continue - Configuration file ' + configFile + ' contains errors!')
+					sys.exit(1)
+				if cnfP.has_section('global') == False:
+					print('Error, cannot continue - Missing section global in ' + configFile  + ' configuration file!')
+					sys.exit(1)
+				dnesniDatum = datetime.today();
+				if cnfP.has_option('global', 'remoteFileSystem'):
+					rmtFS = cnfP.get('global', 'remoteFileSystem')
+					tmpTrida = importTridy('plugins.' + rmtFS)
+					tmpTrida.action(configFile, 'connect')
+				for i in cnfP.sections():
+					if i != 'global':
+						tmpTrida = importTridy('plugins.' + i)
+						tmpTrida.action(configFile, vynucena, dnesniDatum)
+				if cnfP.has_option('global', 'remoteFileSystem'):
+					tmpTrida.action(configFile, 'disconnect')
+			else:
+				print('File ' + configFile + ' has no read permission.')
+				sys.exit(1)
+		else:
+			print('Configuration file ' + configFile + ' not exist!')
+			sys.exit(1)
+	else:
+		print('Application must be run as root!')
+		sys.exit(1)
+
+if __name__ == '__main__':
+	sys.exit(main())
