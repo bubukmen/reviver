@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 import sys,os,getopt,configparser,reviverTools
 from datetime import datetime
@@ -11,7 +10,7 @@ Usage: reviver [flags]
 Flags:
 
 -h, --help                            Show this help message
--c <filename>, --config <filename>    Use different configuration file than /etc/reviver/reviver.conf
+-c <filename>, --config <filename>    Use different configuration file than /etc/reviver/reviver.yaml
 -F, --force                           Force full backup and name it as force
 	''')
 	sys.exit(0)
@@ -26,7 +25,7 @@ def importTridy(name):
 def main():
 	vynucena = 'N'
 	demon = 'N'
-	configFile = '/etc/reviver/reviver.conf'
+	configFile = '/etc/reviver/reviver.yaml'
 
 	try:
 		opts, args = getopt.getopt(sys.argv[1:], 'hc:F', ['help', 'config=', 'force'])
