@@ -1,41 +1,47 @@
 #!/usr/bin/env python
-import os,configparser,reviverTools
+import os, reviverTools
 
 class action:
-	def __init__ (self, configFile, vynucena, denSpusteni):
-		cnfP = configparser.ConfigParser()
-		cnfP.read(configFile)
-		backupTo = cnfP.get('global', 'backupTo')
-		sourceList = cnfP.get('files', 'sourceList')
+	def __init__ (self, globalConf, instructions, forced, dateOfRun):
+		backupTo = globalConf['backupTo']
+		backupLabel = instructions['backupLabel']
+		sourceList = instructions['sources']
 		excludeCommand = ''
-		if cnfP.has_option('files', 'excludeList'):
-			excludeList = cnfP.get('files', 'excludeList')
-			excludeCommand = '-X ' + excludeList + ' '
+		if 'exclude' in instructions:
+			if instructions['exclude'] is not None:
+				excludeList = instructions['exclude']
+				excludeCommand = self.genExcludeCommand(excludeList)
 
-		komprFlag, komprString, komprString2, komprString3 = reviverTools.komprese(cnfP.get('global', 'compression'))
-		typZal = reviverTools.typZalohy(denSpusteni, vynucena)
-		includeList = self.sourceFiles(sourceList)
-		if typZal == 0:
-			textZalohovani = 'daily incremental'
+		komprFlag, komprString, komprString2, komprString3 = reviverTools.getCompression(globalConf['compression'])
+		bkpType = reviverTools.getBackupType(dateOfRun, forced)
+		includeList = self.genSourceCommand(sourceList)
+		if bkpType == 0:
+			outputText = 'daily incremental'
 			tarCommand = '--after-date=yesterday'
-		if typZal == 1:
-			textZalohovani = 'weekly incremental'
+		if bkpType == 1:
+			outputText = 'weekly incremental'
 			tarCommand = '--after-date=-1week'
-		if typZal == 2:
-			textZalohovani = 'complete full'
+		if bkpType == 2:
+			outputText = 'complete full'
 			tarCommand = ''
-		if typZal == 3:
-			textZalohovani = 'forced complete full'
+		if bkpType == 3:
+			outputText = 'forced complete full'
 			tarCommand = ''
-		soubor = reviverTools.nazevSouboru('files', denSpusteni, backupTo, komprString, typ=typZal)
-		print('Making ' + textZalohovani + ' backup of files... (' + soubor + ')')
-		backupString = 'tar ' + excludeCommand + tarCommand + ' -hc' + komprFlag + 'f ' + soubor + includeList
+		fullPath = reviverTools.genFullPath(backupTo, backupLabel)
+		genFile = reviverTools.genFileName('files', dateOfRun, fullPath, backupLabel, komprString, bkpType)
+		print('Making ' + outputText + ' backup of files... (' + genFile + ')')
+		backupString = 'tar ' + excludeCommand + tarCommand + ' -hc' + komprFlag + 'f ' + genFile + includeList
+		reviverTools.checkTargetDirectoryStructure(fullPath)
 		os.system(backupString)
 
-	def sourceFiles(self, sourceList):
-		includeList = ''
-		soubor = open(sourceList, 'r')
-		for i in soubor:
-			includeList = includeList + ' ' + i.strip('\n')
-		return includeList
+	def genSourceCommand(self, sourceList):
+		output = ''
+		for i in sourceList:
+			output += ' ' + i
+		return output
 
+	def genExcludeCommand(self, excludeList):
+		output = ''
+		for i in excludeList:
+			output += '--exclude=' + i + ' '
+		return output

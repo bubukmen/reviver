@@ -1,20 +1,21 @@
 #!/usr/bin/env python
-import os,configparser,reviverTools
+import os, reviverTools
 
 class action:
-	def __init__ (self, configFile, vynucena, denSpusteni):
-		cnfP = configparser.ConfigParser()
-		cnfP.read(configFile)
-		backupTo = cnfP.get('global', 'backupTo')
-		pgDumpCommand = cnfP.get('pgsql', 'pgDumpCommand')
-		pgServer = cnfP.get('pgsql', 'pgServer')
-		pgpassFile = cnfP.get('pgsql', 'pgpassFile')
-		pgUser = cnfP.get('pgsql', 'pgUser')
-		pgPort = cnfP.get('pgsql', 'pgPort')
+	def __init__ (self, globalConf, instructions, forced, dayOfRun):
+		backupTo = globalConf['backupTo']
+		backupLabel = instructions['backupLabel']
+		pgDumpCommand = instructions['dumpCommand']
+		pgServer = instructions['server']
+		pgpassFile = instructions['pgpassFile']
+		pgUser = instructions['user']
+		pgPort = instructions['port']
 
-		komprFlag, komprString, komprString2, komprString3 = reviverTools.komprese(cnfP.get('global', 'compression'))
-		soubor = reviverTools.nazevSouboru('pgsql', denSpusteni, backupTo, komprString3)
-		backupString = "PGPASSFILE=\"" + pgpassFile + "\" " + pgDumpCommand + " -p " + pgPort + " -U " + pgUser + komprString2 + soubor
-		print("Making Postgresql backup to " + soubor + ' file')
+		komprFlag, komprString, komprString2, komprString3 = reviverTools.getCompression(globalConf['compression'])
+		fullPath = reviverTools.genFullPath(backupTo, backupLabel)
+		genFile = reviverTools.genFileName('pgsql', dayOfRun, fullPath, backupLabel, komprString3)
+		backupString = "PGPASSFILE=\"" + pgpassFile + "\" " + pgDumpCommand + " -p " + str(pgPort) + " -U " + pgUser + komprString2 + genFile
+		print("Making Postgresql backup to " + genFile + ' file')
+		reviverTools.checkTargetDirectoryStructure(fullPath)
 		os.system(backupString)
 		

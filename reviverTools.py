@@ -1,71 +1,79 @@
 # -*- coding: utf-8 -*-
 
+import os
 from random import randrange
 from datetime import datetime
 
 def randomPasswordGenerator(self, pocet_pismen):
-	slovo, a, generovani = "", 0, 0
-	while a < pocet_pismen:
-		generovani = randrange(48,122,1)
-		if (generovani >= 48 and generovani <= 57) or (generovani >= 65 and generovani <= 90) or (generovani >= 97 and generovani <= 122):
-			slovo = slovo + chr(generovani)
-			a = a + 1
-	return slovo
+	output, a, generation = "", 0, 0
+	while a < letterCount:
+		generation = randrange(48,122,1)
+		if (generation >= 48 and generation <= 57) or (generation >= 65 and generartion <= 90) or (generation >= 97 and generation <= 122):
+			output += chr(generation)
+			a += 1
+	return output
 
-def vratDatumHodnoty(dnes):
-	den = int(dnes.strftime('%w'))
-	denMesice = int(dnes.strftime('%d'))
-	tyden = int(dnes.strftime('%W'))
-	mesic = int(dnes.strftime('%m'))
-	rok = int(dnes.strftime('%Y'))
-	return den, denMesice, tyden, mesic, rok
+def getDateTimeValues(dnes):
+	day = int(dnes.strftime('%w'))
+	dayOfMonth = int(dnes.strftime('%d'))
+	week = int(dnes.strftime('%W'))
+	month = int(dnes.strftime('%m'))
+	year = int(dnes.strftime('%Y'))
+	return day, dayOfMonth, week, month, year
 
 
-def typZalohy(dnes, vynucena):
-	den, denMesice, tyden, mesic, rok = vratDatumHodnoty(dnes)
-	if vynucena == 'Y':
-		vysledek = 3 #vynucená záloha
+def getBackupType(dateOfRun, forced):
+	day, dayOfMonth, week, month, year = getDateTimeValues(dateOfRun)
+	if forced == 'Y':
+		output = 3 #forced backup
 	else:
-		if den != 0 and denMesice != 1: vysledek = 0 #denní přírůstková
-		if den == 0 and denMesice != 1: vysledek = 1 #týdenní přírůstková
-		if denMesice == 1: vysledek = 2 #měsíční
-	return vysledek
+		if day != 0 and dayOfMonth != 1:output = 0 #daily incremental
+		if day == 0 and dayOfMonth != 1: output = 1 #weekly incremental
+		if dayOfMonth == 1: output = 2 #monthly
+	return output
 
-def nazevSouboru(prefix, dnes, cesta, suffix, typ=0):
-	vysledek = ''
-	den, denMesice, tyden, mesic, rok = vratDatumHodnoty(dnes)
-	if typ == 3: vysledek = cesta + '/' + prefix + '_' + dnes.strftime('%Y-%m-%d') + '-forced' + suffix
-	if typ == 2: vysledek = cesta + '/' + prefix + '_' + dnes.strftime('%Y-%m-%d') + '-monthly' + suffix
-	if typ == 1: vysledek = cesta + '/' + prefix + '_' + dnes.strftime('%Y-%m-%d') + '-weekly' + suffix
-	if typ == 0: vysledek = cesta + '/' + prefix + '_' + dnes.strftime('%Y-%m-%d') + '-daily' + suffix
-	return vysledek
+def genFullPath(backupTo, backupLabel):
+	return backupTo + '/' + backupLabel
 
-def komprese(typ):
-	if typ == 'xz':
+def genFileName(prefix, dateOfRun, fullPath, backupLabel, suffix, bkpType=0):
+	output = ''
+	if bkpType == 3: output = fullPath + '/' + prefix + '_' + backupLabel + '_' + dateOfRun.strftime('%Y-%m-%d') + '-forced' + suffix
+	if bkpType == 2: output = fullPath + '/' + prefix + '_' + backupLabel + '_' + dateOfRun.strftime('%Y-%m-%d') + '-monthly' + suffix
+	if bkpType == 1: output = fullPath + '/' + prefix + '_' + backupLabel + '_' + dateOfRun.strftime('%Y-%m-%d') + '-weekly' + suffix
+	if bkpType == 0: output = fullPath + '/' + prefix + '_' + backupLabel + '_' + dateOfRun.strftime('%Y-%m-%d') + '-daily' + suffix
+	return output
+
+def getCompression(bkpType):
+	if bkpType == 'xz':
 		komprFlag = "J"
 		komprString = ".tar.xz"
 		komprString2 = " | xz > "
 		komprString3 = ".xz"
-	elif typ == 'bzip':
+	elif bkpType == 'bzip':
 		komprFlag = "j"
 		komprString = ".tar.bz2"
 		komprString2 = " | bzip2 > "
 		komprString3 = ".bz2"
-	elif typ == 'gzip':
+	elif bkpType == 'gzip':
 		komprFlag = "z"
 		komprString = ".tar.gz"
 		komprString2 = " | gzip > "
 		komprString3 = ".gz"
-	elif typ == 'none':
+	elif bkpType == 'none':
 		komprFlag = ""
 		komprString = ".tar"
 		komprString2 = " > "
 		komprString3 = ".sql"
 	else:
-		print("Neznámá hodnota \"" + typ + "\". Komprese bude vypnuta.")
+		print("Unknown value \"" + bpkType + "\". Compression turned off.")
 		komprFlag = ""
 		komprString = ".tar"
 		komprString2 = " > "
 		komprString3 = ".sql"
 
 	return komprFlag, komprString, komprString2, komprString3
+
+def checkTargetDirectoryStructure(fullPath):
+	if not os.path.isdir(fullPath):
+		print('Creating directory ' + fullPath)
+		os.makedirs(fullPath)

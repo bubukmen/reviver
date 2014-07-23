@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 
-import sys,os,getopt,configparser,reviverTools
-from datetime import datetime
+try:
+
+	import sys, os, getopt, reviverTools, yaml
+	from datetime import datetime
+except ImportError as err:
+	print('Error while loading ' + err.name + '.\nYou probably need to install this module.')
+	sys.exit(1)
 
 def napoveda():
 	print('''
@@ -15,7 +20,7 @@ Flags:
 	''')
 	sys.exit(0)
 
-def importTridy(name):
+def importClass(name):
 	mod = __import__(name)
 	components = name.split('.')
 	for comp in components[1:]:
@@ -23,7 +28,7 @@ def importTridy(name):
 	return mod
 
 def main():
-	vynucena = 'N'
+	forced = 'N'
 	demon = 'N'
 	configFile = '/etc/reviver/reviver.yaml'
 
@@ -37,31 +42,28 @@ def main():
 		elif o in ('-c', '--config'):
 			configFile = a
 		elif o in ('-F', '--force'):
-			vynucena = 'Y'
+			forced = 'Y'
 
 	if os.getuid() == 0:
 		if os.access(configFile, os.F_OK):
 			if os.access(configFile, os.R_OK):
-				cnfP = configparser.ConfigParser()
+				f = open(configFile, 'r')
+				prepString = f.read()
+				f.close()
 				try:
-					cnfP.read(configFile)
-				except ConfigParser.MissingSectionHeaderError:
-					print('Error, cannot continue - Configuration file ' + configFile + ' contains errors!')
+					cnfP = yaml.load(prepString)
+				except yaml.parser.ParserError as ymlerr:
+					print('Error while parsing config file ' + configFile)
 					sys.exit(1)
-				if cnfP.has_section('global') == False:
-					print('Error, cannot continue - Missing section global in ' + configFile  + ' configuration file!')
+				if 'global' not in cnfP:
+					print('Error, cannot continue - Missing section global in configuration file ' + configFile)
 					sys.exit(1)
-				dnesniDatum = datetime.today();
-				if cnfP.has_option('global', 'remoteFileSystem'):
-					rmtFS = cnfP.get('global', 'remoteFileSystem')
-					tmpTrida = importTridy('plugins.' + rmtFS)
-					tmpTrida.action(configFile, 'connect')
-				for i in cnfP.sections():
+				today = datetime.today();
+				for i in cnfP:
 					if i != 'global':
-						tmpTrida = importTridy('plugins.' + i)
-						tmpTrida.action(configFile, vynucena, dnesniDatum)
-				if cnfP.has_option('global', 'remoteFileSystem'):
-					tmpTrida.action(configFile, 'disconnect')
+						for instructions in cnfP[i]:
+							tmpClass = importClass('plugins.' + i)
+							tmpClass.action(cnfP['global'], instructions, forced, today)
 			else:
 				print('File ' + configFile + ' has no read permission.')
 				sys.exit(1)
