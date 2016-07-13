@@ -10,10 +10,15 @@
 #Every module must contain backupLabel.
 
 global:
-    backupTo: /backup #Location where to store your backup files
-    compression: xz #Type of compression. Available: gz, bz2, xz
-    logFile: /var/log/reviver.log #Path to logging file
-    fileDatabase: /var/lib/reviver/backupFiles.yaml #This file is inteded to store some backup work information.
+  backupTo: /backup #Location where to store your backup files
+  compression: xz #Type of compression. Available: gz, bz2, xz
+  logFile: /var/log/reviver.log #Path to logging file
+  fileDatabase: /var/lib/reviver/backupFiles.yaml #This file is inteded to store some backup work information.
+
+#remoteSync:
+#  - remoteLabel: ExternalUSBDrive
+#    driveLabel: MyBackup
+#    mountPoint: /mnt/remote_backup #Please add this mount point to the /etc/fstab file with noauto option.
 
 #You can specify multiple round of backups with new sequence containing backupLabel, sources and exclude nodes
 #files:
@@ -46,3 +51,5 @@ global:
 #    pgpassFile: /etc/reviver/postgres.pgpass #Please ensure, you set right permissions to protect this file from unauthorized access.
 #    user: postgres
 #    port: 5432
+
+

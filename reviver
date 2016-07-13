@@ -1,15 +1,24 @@
 #!/usr/bin/env python
 
+#Import modules.
 try:
-
-	import sys, os, getopt, reviverTools, yaml
-	from datetime import datetime
+  import sys, os, getopt, reviverTools
+  from datetime import datetime
+  from yaml import load, dump
 except ImportError as err:
-	print('Error while loading ' + err.name + '.\nYou probably need to install this module.')
-	sys.exit(1)
+  print('Error while loading %s\nYou probably need to install this module.' % (err.name))
+  sys.exit(1)
 
-def napoveda():
-	print('''
+#Import yaml module and test if we load it in native or compatible mode.
+try:
+  from yaml import CLoader as Loader, CDumper as Dumper
+except ImportError:
+  from yaml import Loader, Dumper
+  print('Notice: Yaml module is imported in pure compatible mode. Config file parsing will be slow.')
+
+#Function to show help.
+def showHelp():
+  print('''
 Reviver is modular application for making backup of your files, databases etc. on your server or PC.
 Usage: reviver [flags]
 Flags:
@@ -17,62 +26,87 @@ Flags:
 -h, --help                            Show this help message
 -c <filename>, --config <filename>    Use different configuration file than /etc/reviver/reviver.yaml
 -F, --force                           Force full backup and name it as force
-	''')
-	sys.exit(0)
+  ''')
+  sys.exit(0)
 
+#Function to import module in plugins directory.
 def importClass(name):
-	mod = __import__(name)
-	components = name.split('.')
-	for comp in components[1:]:
-		mod = getattr(mod, comp)
-	return mod
+  mod = __import__(name)
+  components = name.split('.')
+  for comp in components[1:]:
+    mod = getattr(mod, comp)
+  return mod
 
+#Main function.
 def main():
-	forced = 'N'
-	demon = 'N'
-	configFile = '/etc/reviver/reviver.yaml'
 
-	try:
-		opts, args = getopt.getopt(sys.argv[1:], 'hc:F', ['help', 'config=', 'force'])
-	except getopt.error as msg:
-		napoveda()
-	for o, a in opts:
-		if o in ('-h', '--help'):
-			napoveda()
-		elif o in ('-c', '--config'):
-			configFile = a
-		elif o in ('-F', '--force'):
-			forced = 'Y'
+  #Implilcit fariables.
+  forced = False
+  configFile = '/etc/reviver/reviver.yaml'
+  doRemoteSync = False
 
-	if os.getuid() == 0:
-		if os.access(configFile, os.F_OK):
-			if os.access(configFile, os.R_OK):
-				f = open(configFile, 'r')
-				prepString = f.read()
-				f.close()
-				try:
-					cnfP = yaml.load(prepString)
-				except yaml.parser.ParserError as ymlerr:
-					print('Error while parsing config file ' + configFile)
-					sys.exit(1)
-				if 'global' not in cnfP:
-					print('Error, cannot continue - Missing section global in configuration file ' + configFile)
-					sys.exit(1)
-				today = datetime.today();
-				for i in cnfP:
-					if i != 'global':
-						for instructions in cnfP[i]:
-							tmpClass = importClass('plugins.' + i)
-							tmpClass.action(cnfP['global'], instructions, forced, today)
-			else:
-				print('File ' + configFile + ' has no read permission.')
-				sys.exit(1)
-		else:
-			print('Configuration file ' + configFile + ' not exist!')
-			sys.exit(1)
-	else:
-		print('Application must be run as root!')
-		sys.exit(1)
+  #Getopts implementation.
+  try:
+    opts, args = getopt.getopt(sys.argv[1:], 'hc:F', ['help', 'config=', 'force'])
+  except getopt.error as msg:
+    showHelp()
+  for o, a in opts:
+    if o in ('-h', '--help'):
+      showHelp()
+    elif o in ('-c', '--config'):
+      configFile = a
+    elif o in ('-F', '--force'):
+      forced = True
 
+  #Test if user is root. Otherwise exit application.
+  if os.getuid() != 0:
+    print('Reviver must be run as root!')
+    sys.exit(1)
+
+  #Test if config file exist. Otherwise exit application.
+  if not os.access(configFile, os.F_OK):
+    print('Configuration file %s does not exist!' % (configFile))
+    sys.exit(1)
+
+  #Test if config file permission is 600. Otherwise exit application.
+  filePerm = int(oct(os.stat(configFile).st_mode)[-3:])
+  if filePerm != 600:
+    print('Configuration file %s has %s permission.\nPlease change file permission to 600!' % (configFile, filePerm))
+    sys.exit(1)
+
+  #Open config file in read only mode.
+  f = open(configFile, 'r')
+  prepString = f.read()
+  f.close()
+
+  #Deserialize yaml config file. If parse error, exit application.
+  try:
+    cnfP = load(prepString, Loader=Loader)
+  except yaml.parser.ParserError as ymlerr:
+    print('Error while parsing config file %s' % (configFile))
+    sys.exit(1)
+
+  #Test if yaml config file has global section. Otherwise exit application.
+  if 'global' not in cnfP:
+    print('Error, Can\'t continue - Missing global section in configuration file %s' % (configFile))
+    sys.exit(1)
+
+  #We need to know current date of execution. This is important, because some backup may take several days.
+  today = datetime.today()
+
+  #Loop over config sections. Run plugin if it's name isn't global or remoteSync
+  for section in cnfP:
+    if section == 'global':
+      continue
+
+    if section == 'remoteSync':
+      doRemoteSync = True
+      continue
+
+    for instructions in cnfP[section]:
+      tmpClass = importClass('plugins.%s' % (section))
+      tmpClass.action(cnfP['global'], instructions, forced, today)
+
+#Execute main function
 if __name__ == '__main__':
-	sys.exit(main())
+  sys.exit(main())
