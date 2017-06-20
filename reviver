@@ -1,8 +1,9 @@
 #!/usr/bin/env python
+# vim: set fileencoding=utf-8 :
 
 #Import modules.
 try:
-  import sys, os, getopt, reviverTools
+  import sys, os, getopt, logging, reviverTools
   from datetime import datetime
   from yaml import load, dump
 except ImportError as err:
@@ -91,7 +92,12 @@ def main():
     print('Error, Can\'t continue - Missing global section in configuration file %s' % (configFile))
     sys.exit(1)
 
-  #We need to know current date of execution. This is important, because some backup may take several days.
+  #Determine type of logging - not implemented yet
+  log = logging.getLogger(__name__)
+  #log.setLevel(logging.)
+
+
+  #We need to know current date of execution. This is important, because some backups may take several days.
   today = datetime.today()
 
   #Loop over config sections. Run plugin if it's name isn't global or remoteSync
@@ -105,7 +111,12 @@ def main():
 
     for instructions in cnfP[section]:
       tmpClass = importClass('plugins.%s' % (section))
-      tmpClass.action(cnfP['global'], instructions, forced, today)
+      tmpClass.action(cnfP['global'], instructions, forced, today, log)
+
+  if doRemoteSync:
+    for instructions in cnfP['remoteSync']:
+      tmpClass = importClass('plugins.remoteSync')
+      tmpClass.action(cnfP['global'], instructions, log)
 
 #Execute main function
 if __name__ == '__main__':

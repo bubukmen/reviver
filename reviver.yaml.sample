@@ -12,44 +12,44 @@
 global:
   backupTo: /backup #Location where to store your backup files
   compression: xz #Type of compression. Available: gz, bz2, xz
-  logFile: /var/log/reviver.log #Path to logging file
-  fileDatabase: /var/lib/reviver/backupFiles.yaml #This file is inteded to store some backup work information.
+  logLevel: 5 #Will be implemented in future version
+  logFile: /var/log/reviver.log #Will be implemented in future version
 
-#remoteSync:
-#  - remoteLabel: ExternalUSBDrive
-#    driveLabel: MyBackup
-#    mountPoint: /mnt/remote_backup #Please add this mount point to the /etc/fstab file with noauto option.
+remoteSync:
+  - remoteSyncLabel: External USB Drive #Label for remote sync action
+    mountPoint: /mnt/remote_backup #Please add this mount point to the /etc/fstab file with noauto option.
+    syncDestination: /mnt/remote_backup/server #Synchronize your backup into this directory.
 
-#You can specify multiple round of backups with new sequence containing backupLabel, sources and exclude nodes
-#files:
-#  - backupLabel: BootDir #Backup file will be placed in subdirectory with this name. For example: /backup/files/MyDocuments/files_MyDocuments_2014-05-24.tar.lzma
-#    sources:
-#      - '/boot'
-#    exclude:
-#      - 'grub'
-#      - 'syslinux'
-#  - backupLabel: UsrDir
-#    sources:
-#     - '/usr'
+files:
+  - backupLabel: MyDocuments #Backup file will be placed in subdirectory with this name. For example: /backup/MyDocuments/files_MyDocuments_2016-05-24-daily.tar.xz
+    sources:
+      - '/home/john/documents'
+    exclude:
+      - 'dumb_notes.txt'
+     keep: 5 #Number of months to keep backups in place. Older backups will be deleted.
 
-#Please sepcify here dump command, server name, user name, password and port
+  #You can specify multiple rounds of backup with new sequence containing unique backupLabel
+  - backupLabel: UsrDir
+    sources:
+     - '/usr'
+
+#Please sepcify here full path to dump command, server name, user name, password and port
 #You can also run multiple rounds of backups with new sequence.
-#mysql:
-#  - backupLabel: MySQLdb
-#    dumpCommand: /usr/bin/mysqldump
-#    server: localhost
-#    user: root
-#    password: t0p5ecr€T
-#    port: 3306
+mysql:
+  - backupLabel: MySQLdb
+    server: localhost
+    user: root
+    password: t0p5ecr€T
+    port: 3306
+    keep: 7
 
-#Postgresql backup is based on pgpass authorization. If you don't know how to do it, read PostgreSQL documentation.
-#Again, you can also run multiple rounds.
-#pgsql:
-#  - backupLabel: PGSQLdb
-#    dumpCommand: /usr/bin/pg_dumpall
-#    server: localhost
-#    pgpassFile: /etc/reviver/postgres.pgpass #Please ensure, you set right permissions to protect this file from unauthorized access.
-#    user: postgres
-#    port: 5432
-
+#Postgresql backup is done using temporary pgpass file.
+#You can also run multiple rounds.
+pgsql:
+  - backupLabel: PGSQLdb
+    server: localhost
+    user: postgres
+    password: t0p5ecr€T
+    port: 5432
+    keep: 7
 
