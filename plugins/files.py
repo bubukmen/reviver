@@ -52,7 +52,7 @@ class action:
     if self.tarCommand is not None:
       self.backupString = ['tar', self.excludeCommand, self.tarCommand, '-hc%sf' % (self.komprFlag), self.genFile, self.includeList] 
     else:
-      self.backupString = ['tar', self.excludeCommand, '-hc%sf' % (komprFlag), self.genFile, self.includeList]
+      self.backupString = ['tar', self.excludeCommand, '-hc%sf' % (self.komprFlag), self.genFile, self.includeList]
 
   # This function generates source file list 
   def genSourceCommand(self, sourceList):
