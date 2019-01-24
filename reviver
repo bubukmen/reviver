@@ -5,7 +5,7 @@
 try:
   import sys, os, getopt, logging, reviverTools
   from datetime import datetime
-  from yaml import load, dump
+  from yaml import load, dump, parser
 except ImportError as err:
   print('Error while loading %s\nYou probably need to install this module.' % (err.name))
   sys.exit(1)
@@ -83,7 +83,7 @@ def main():
   #Deserialize yaml config file. If parse error, exit application.
   try:
     cnfP = load(prepString, Loader=Loader)
-  except yaml.parser.ParserError as ymlerr:
+  except parser.ParserError as ymlerr:
     print('Error while parsing config file %s' % (configFile))
     sys.exit(1)
 

@@ -40,7 +40,7 @@ class action:
 
   def genConfigFile(self):
     insertToFile = ('%s:%s:*:%s:%s' % (self.pgServer, self.pgPort, self.pgUser, self.pgPassword)).encode()
-    rndFileName = '/tmp/PGSQL-%s.conf' % reviverTools.generateRandomString(20)
+    rndFileName = '/tmp/PGSQL-%s.conf' % reviverTools.genUniqueId()
     fd = os.open(rndFileName, os.O_RDWR | os.O_CREAT)
     os.chown(fd, 0, 0)
     os.chmod(fd, stat.S_IRUSR | stat.S_IWUSR)

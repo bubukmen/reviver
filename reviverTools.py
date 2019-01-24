@@ -4,18 +4,20 @@ import os, re, shutil
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from random import randint
+from base64 import b64encode
 
-def generateRandomString(letterCount=10, advPass=False):
-  retVal, a = '', 0
-  if advPass:
-    letterList = list('!#%+23456789:=?@ABCDEFGHJKLMNPRSTUVWXYZabcdefghijkmnopqrstuvwxyz')
+#Function to generate unique ID
+def genUniqueId(size=24, b64=False):
+  retVal = bytes()
+  for i in range(0, size):
+    retVal += bytes([randint(0, 255)])
+  if b64:
+    retVal = b64encode(retVal)
   else:
-    letterList = list('23456789ABCDEFGHJKLMNPRSTUVWXYZabcdefghijkmnopqrstuvwxyz')
-  while a < letterCount:
-    retVal += letterList[randint(0, len(letterList) - 1)] 
-    a += 1
+    retVal = retVal.hex()
   return retVal
 
+#Helper function returning tuple with date repesentation in numbers
 def getDateTimeValues(dnes):
   day = int(dnes.strftime('%w'))
   dayOfMonth = int(dnes.strftime('%d'))
@@ -24,7 +26,7 @@ def getDateTimeValues(dnes):
   year = int(dnes.strftime('%Y'))
   return day, dayOfMonth, week, month, year
 
-
+#Helper function returning backup type in number representation
 def getBackupType(dateOfRun, forced):
   day, dayOfMonth, week, month, year = getDateTimeValues(dateOfRun)
   if forced:
@@ -35,9 +37,11 @@ def getBackupType(dateOfRun, forced):
     if dayOfMonth == 1: output = 2 #monthly
   return output
 
+#Helper funtction returning full backup path
 def genFullPath(backupTo, backupLabel):
   return '%s/%s' % (backupTo, backupLabel)
 
+#Helper function returning final backup name
 def genFileName(prefix, dateOfRun, fullPath, backupLabel, suffix, bkpType=0):
   output = ''
   strDate = dateOfRun.strftime('%Y-%m-%d')
@@ -47,47 +51,64 @@ def genFileName(prefix, dateOfRun, fullPath, backupLabel, suffix, bkpType=0):
   if bkpType == 3: output = '%s/%s_%s_%s-forced%s' % (fullPath, prefix, backupLabel, strDate, suffix)
   return output
 
+#This function is returning tuple with possible filename suffixes
 def getCompression(bkpType):
   if bkpType == 'xz':
-    komprFlag = 'J'
-    komprString = '.tar.xz'
-    komprString2 = ['xz']
-    komprString3 = '.sql.xz'
+    comprFlag = 'J'
+    comprString = '.tar.xz'
+    comprString2 = ['xz']
+    comprString3 = '.sql.xz'
   elif bkpType == 'bzip':
-    komprFlag = 'j'
-    komprString = '.tar.bz2'
-    komprString2 = ['bzip2']
-    komprString3 = '.sql.bz2'
+    comprFlag = 'j'
+    comprString = '.tar.bz2'
+    comprString2 = ['bzip2']
+    comprString3 = '.sql.bz2'
   elif bkpType == 'gzip':
-    komprFlag = 'z'
-    komprString = '.tar.gz'
-    komprString2 = ['gzip']
-    komprString3 = '.sql.gz'
+    comprFlag = 'z'
+    comprString = '.tar.gz'
+    comprString2 = ['gzip']
+    comprString3 = '.sql.gz'
   elif bkpType == 'none':
-    komprFlag = ''
-    komprString = '.tar'
-    komprString2 = None
-    komprString3 = '.sql'
+    comprFlag = ''
+    comprString = '.tar'
+    comprString2 = None
+    comprString3 = '.sql'
   else:
     print('Unknown value"%s". Compression turned off' % (bkpType))
-    komprFlag = ''
-    komprString = '.tar'
-    komprString2 = None
-    komprString3 = '.sql'
+    comprFlag = ''
+    comprString = '.tar'
+    comprString2 = None
+    comprString3 = '.sql'
 
-  return komprFlag, komprString, komprString2, komprString3
+  return comprFlag, comprString, comprString2, comprString3
 
+#This function automatically create backup destination directory structure
 def checkTargetDirectoryStructure(fullPath):
   if not os.path.isdir(fullPath):
     print('Creating directory %s' % (fullPath))
     os.makedirs(fullPath)
 
+#This function is adding slash to the end of configuration directive
 def rsyncSanitizeDir(dirName):
   output = dirName
   if dirName[-1] is not '/':
     output = '%s/' % (dirName)
   return output
 
+#This function is removing (back)slashes from the end of configuration directive
+def sanitizePath(pathStr):
+  retVal = pathStr
+  if pathStr[-1] == '\\' or pathStr[-1] == '/':
+    retVal = pathStr[:-1]
+  return retVal
+
+#This function is platform independent and recognize path separator type.
+def guessPathSeparator(pathStr):
+  rxpCompile = re.compile(r'^.*(?P<rxpSeparator>[\\/]).*$')
+  rxp = re.match(rxpCompile, pathStr)
+  return rxp.groups('rxpSeparator')[0]
+
+#This function is seeking and removing old backups based on keep directive in configuration
 def cleanOldBackupFiles(fullPath, dateOfRun, keepTime, filePrefix, bkpString, dbTypeBackup=False):
   print('Cleaning old backup files in %s:' % (fullPath))
   fnRegexp = re.compile(r'^%s_(?P<rxpDate>[-0-9]*)-(daily|weekly|monthly|forced)%s$' % (filePrefix, bkpString))
@@ -108,5 +129,15 @@ def cleanOldBackupFiles(fullPath, dateOfRun, keepTime, filePrefix, bkpString, db
     
   print('Cleaning in %s complete' % (fullPath))
 
+#Function shortcut to find app binary path
 def findApp(appName):
   return shutil.which(appName)
+
+#This function is testing if mount is already mounted or not
+def testIfMounted(mountPath):
+  retVal = False
+  with open('/proc/mounts', 'r') as f:
+    for line in f:
+      if mountPath in line:
+        retVal = True
+  return retVal

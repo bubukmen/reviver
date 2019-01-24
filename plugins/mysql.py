@@ -42,7 +42,7 @@ class action:
   # This function will generate additional temporary MySQL config file.
   def genConfigFile(self):
     insertToFile = ('[mysqldump]\nhost=%s\nuser=%s\npassword=%s' % (self.mysqlServer, self.mysqlUser, self.mysqlPassword)).encode()
-    rndFileName = '/tmp/MySQL-%s.cnf' % reviverTools.generateRandomString(20)
+    rndFileName = '/tmp/MySQL-%s.cnf' % reviverTools.genUniqueId()
     fd = os.open(rndFileName, os.O_RDWR | os.O_CREAT)
     os.chown(fd, 0, 0)
     os.chmod(fd, stat.S_IRUSR | stat.S_IWUSR)
@@ -50,7 +50,7 @@ class action:
     os.close(fd)
     return rndFileName
 
- # Main backup function where final backup command is executed 
+  # Main backup function where final backup command is executed 
   def main(self):
     reviverTools.checkTargetDirectoryStructure(self.fullPath)
     print('Making MySQL backup to %s file' % self.genFile)
