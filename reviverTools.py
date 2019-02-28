@@ -53,34 +53,17 @@ def genFileName(prefix, dateOfRun, fullPath, backupLabel, suffix, bkpType=0):
 
 #This function is returning tuple with possible filename suffixes
 def getCompression(bkpType):
-  if bkpType == 'xz':
-    comprFlag = 'J'
-    comprString = '.tar.xz'
-    comprString2 = ['xz']
-    comprString3 = '.sql.xz'
-  elif bkpType == 'bzip':
-    comprFlag = 'j'
-    comprString = '.tar.bz2'
-    comprString2 = ['bzip2']
-    comprString3 = '.sql.bz2'
-  elif bkpType == 'gzip':
-    comprFlag = 'z'
-    comprString = '.tar.gz'
-    comprString2 = ['gzip']
-    comprString3 = '.sql.gz'
-  elif bkpType == 'none':
-    comprFlag = ''
-    comprString = '.tar'
-    comprString2 = None
-    comprString3 = '.sql'
-  else:
-    print('Unknown value"%s". Compression turned off' % (bkpType))
-    comprFlag = ''
-    comprString = '.tar'
-    comprString2 = None
-    comprString3 = '.sql'
-
-  return comprFlag, comprString, comprString2, comprString3
+  trueBkpType = bkpType.lower() if type(bkpType) == str else bkpType
+  switcher = {
+    'xz': ('J', '.tar.xz', ['xz'], '.sql.xz'),
+    'bzip': ('j', '.tar.bz2', ['bzip2'], '.sql.bz2'),
+    'gzip': ('z', '.tar.gz', ['gzip'], '.sql.gz'),
+    'none': ('', '.tar', None, '.sql'),
+    b'\x00': ('', '.tar', None, '.sql')
+  }
+  if trueBkpType not in switcher:
+    print('Unknown value "%s". Compression will be turned off' % (bkpType))
+  return switcher.get(trueBkpType, switcher.get(b'\x00'))
 
 #This function automatically create backup destination directory structure
 def checkTargetDirectoryStructure(fullPath):

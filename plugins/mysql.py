@@ -14,6 +14,7 @@ class action:
     self.log = log
     self.backupTo = self.globalConf['backupTo']
     self.backupLabel = self.instructions['backupLabel']
+    self.compressionType = instructions['compression'] if 'compression' in instructions else globalConf['compression']
     self.keepTime = -1
     if 'keep' in self.instructions:
       self.keepTime = self.instructions['keep']
@@ -31,7 +32,7 @@ class action:
 
   # Initialize more variables based on config file. Preparations for main backup function
   def initRest(self):
-    self.komprFlag, self.komprString, self.komprString2, self.komprString3 = reviverTools.getCompression(self.globalConf['compression'])
+    self.komprFlag, self.komprString, self.komprString2, self.komprString3 = reviverTools.getCompression(self.compressionType)
     self.fullPath = reviverTools.genFullPath(self.backupTo, self.backupLabel)
     self.genFile = reviverTools.genFileName('mysql', self.dateOfRun, self.fullPath, self.backupLabel, self.komprString3)
     self.compressionProgram = reviverTools.findApp(self.komprString2[0])

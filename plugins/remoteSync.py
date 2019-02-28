@@ -24,7 +24,7 @@ class action:
 
     #Synchronize remote and local directory with rsync application
     try:
-      subprocess.run(['rsync', '-av', '--delete', reviverTools.rsyncSanitizeDir(backupTo), reviverTools.rsyncSanitizeDir(mountPoint + '/' + remoteDir)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, check=True)
+      subprocess.run(['rsync', '-a', '--delete', reviverTools.rsyncSanitizeDir(backupTo), reviverTools.rsyncSanitizeDir('%s/%s' % (mountPoint, remoteDir))], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, check=True)
     except subprocess.CalledProcessError as err:
       print('Error while running synchronization command.\n%s' % (err.stderr))
 

@@ -44,12 +44,11 @@ def main():
   #Implilcit fariables.
   forced = False
   configFile = '/etc/reviver/reviver.yaml'
-  doRemoteSync = False
 
   #Getopts implementation.
   try:
     opts, args = getopt.getopt(sys.argv[1:], 'hc:F', ['help', 'config=', 'force'])
-  except getopt.error as msg:
+  except getopt.error:
     showHelp()
   for o, a in opts:
     if o in ('-h', '--help'):
@@ -76,14 +75,13 @@ def main():
     sys.exit(1)
 
   #Open config file in read only mode.
-  f = open(configFile, 'r')
-  prepString = f.read()
-  f.close()
+  with open(configFile, 'r') as f:
+    prepString = f.read()
 
   #Deserialize yaml config file. If parse error, exit application.
   try:
     cnfP = load(prepString, Loader=Loader)
-  except parser.ParserError as ymlerr:
+  except parser.ParserError:
     print('Error while parsing config file %s' % (configFile))
     sys.exit(1)
 
@@ -92,28 +90,25 @@ def main():
     print('Error, Can\'t continue - Missing global section in configuration file %s' % (configFile))
     sys.exit(1)
 
+  #Test if there is compression definition. If not, application will add 'none' string.
+  if 'compression' not in cnfP['global']:
+    cnfP['global']['compression'] = 'none'
+
   #Determine type of logging - not implemented yet
   log = logging.getLogger(__name__)
   #log.setLevel(logging.)
-
 
   #We need to know current date of execution. This is important, because some backups may take several days.
   today = datetime.today()
 
   #Loop over config sections. Run plugin if it's name isn't global or remoteSync
-  for section in cnfP:
-    if section == 'global':
-      continue
-
-    if section == 'remoteSync':
-      doRemoteSync = True
-      continue
+  for section in [i for i in cnfP if i != 'global' and i != 'remoteSync']:
 
     for instructions in cnfP[section]:
       tmpClass = importClass('plugins.%s' % (section))
       tmpClass.action(cnfP['global'], instructions, forced, today, log)
 
-  if doRemoteSync:
+  if 'remoteSync' in cnfP:
     for instructions in cnfP['remoteSync']:
       tmpClass = importClass('plugins.remoteSync')
       tmpClass.action(cnfP['global'], instructions, log)

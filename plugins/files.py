@@ -13,18 +13,18 @@ class action:
     self.dateOfRun = dateOfRun
     self.log = log
     self.backupTo = globalConf['backupTo']
+    self.compressionType = instructions['compression'] if 'compression' in instructions else globalConf['compression']
     self.backupLabel = self.instructions['backupLabel']
     self.sourceList = self.instructions['sources']
     self.keepTime = -1
     if 'keep' in self.instructions:
       self.keepTime = self.instructions['keep']
-    self.excludeCommand = ''
+    self.excludeCommands = [None]
     if 'exclude' in self.instructions:
       if self.instructions['exclude'] is not None:
-        self.excludeList = self.instructions['exclude']
-        self.excludeCommand = self.genExcludeCommand(excludeList)
-    self.tarCommand = reviverTools.findApp('tar')
-    if self.tarCommand is None:
+        self.excludeCommands = ['--exclude=%s' % i for i in self.instructions['exclude']]
+    self.tarBinary = reviverTools.findApp('tar')
+    if self.tarBinary is None:
       print('No tar command found. Backup of files will exit.')
       return
     self.initRest()
@@ -32,9 +32,8 @@ class action:
 
   # Initialize more variables based on config file. Preparations for main backup function
   def initRest(self):
-    self.komprFlag, self.komprString, self.komprString2, self.komprString3 = reviverTools.getCompression(self.globalConf['compression'])
+    self.komprFlag, self.komprString, self.komprString2, self.komprString3 = reviverTools.getCompression(self.compressionType)
     self.bkpType = reviverTools.getBackupType(self.dateOfRun, self.forced)
-    self.includeList = self.genSourceCommand(self.sourceList)
     if self.bkpType == 0:
       self.outputText = 'daily incremental'
       self.tarCommand = '--after-date=yesterday'
@@ -49,33 +48,17 @@ class action:
       self.tarCommand = None
     self.fullPath = reviverTools.genFullPath(self.backupTo, self.backupLabel)
     self.genFile = reviverTools.genFileName('files', self.dateOfRun, self.fullPath, self.backupLabel, self.komprString, self.bkpType)
-    if self.tarCommand is not None:
-      self.backupString = ['tar', self.excludeCommand, self.tarCommand, '-hc%sf' % (self.komprFlag), self.genFile, self.includeList] 
-    else:
-      self.backupString = ['tar', self.excludeCommand, '-hc%sf' % (self.komprFlag), self.genFile, self.includeList]
-
-  # This function generates source file list 
-  def genSourceCommand(self, sourceList):
-    output = ''
-    for i in sourceList:
-      output += ' %s' % (i)
-    return output[1:]
-
-  # This function generates exclude file list
-  def genExcludeCommand(self, excludeList):
-    output = ''
-    for i in excludeList:
-      output += '--exclude=%s ' % (i)
-    return output[:-1]
+    tmpBackupString = [self.tarBinary] + self.excludeCommands + [self.tarCommand, '-hc%sf' % (self.komprFlag), self.genFile] + self.sourceList
+    self.backupString = [i for i in tmpBackupString if i is not None]
 
   # Main backup function where final backup command is executed
   def main(self):
     reviverTools.checkTargetDirectoryStructure(self.fullPath)
-    print('Making %s backup of files... (%s)' % (self.outputText, self.genFile))
+    print('Making %s backup of files... (%s)' % (self.outputText, ', '.join(self.sourceList)))
     try:
       subprocess.run(self.backupString, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, check=True)
     except subprocess.CalledProcessError as err:
-      print('Backup command %s failed' % (err.stderr))
+      print('Backup command failed with error:\n%s' % (err.stderr))
       return
 
     # Remove old backup files after main backup function

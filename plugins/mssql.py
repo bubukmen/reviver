@@ -116,7 +116,7 @@ class action:
       print('Mount command failed: %s' % err.stderr)
       raise
 
-  #FFunction to test if final Tar filename already exists. If yes, function will rename this file with unique ID suffix for safety reasons
+  #Function to test if final Tar filename already exists. If yes, function will rename this file with unique ID suffix for safety reasons
   def sanitizeAlreadyExistingFile(self, targetFile):
     if os.access(targetFile, os.F_OK):
       fileSuffix = reviverTools.genUniqueId(5)
