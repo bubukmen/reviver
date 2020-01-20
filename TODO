@@ -1,0 +1,9 @@
+- Make "diet" variant of backup. This variant will erase all unnecessary daily and weekly backups during cleaning procedure.
+- Make SVN module
+- Make Oracle module
+- Add functionality in MySQL module to backup selected databasees instead of whole DB.
+- Add new functionality to files module. This functionality will examine target directory, create tree structure and make sorted backup to these directories.
+  For example: With this, you'll be able to backup Maildirs easily.
+- New config variable. This variable will define backup skipping. It will be something like cron syntax.
+- Update config sample to include all modules and configuration samples. Or remove sample and write documentation.
+- Pymssql is unfortunately obsolete, implement future version of mssql module in pyodbc.

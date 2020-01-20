@@ -52,15 +52,49 @@ def genFileName(prefix, dateOfRun, fullPath, backupLabel, suffix, bkpType=0):
   return output
 
 #This function is returning tuple with possible filename suffixes
-def getCompression(bkpType):
+def getCompression(bkpType, oldSyntax=True):
   trueBkpType = bkpType.lower() if type(bkpType) == str else bkpType
-  switcher = {
-    'xz': ('J', '.tar.xz', ['xz'], '.sql.xz'),
-    'bzip': ('j', '.tar.bz2', ['bzip2'], '.sql.bz2'),
-    'gzip': ('z', '.tar.gz', ['gzip'], '.sql.gz'),
-    'none': ('', '.tar', None, '.sql'),
-    b'\x00': ('', '.tar', None, '.sql')
-  }
+  if oldSyntax:
+    switcher = {
+      'xz': ('J', '.tar.xz', ['xz'], '.sql.xz'),
+      'bzip': ('j', '.tar.bz2', ['bzip2'], '.sql.bz2'),
+      'gzip': ('z', '.tar.gz', ['gzip'], '.sql.gz'),
+      'none': ('', '.tar', None, '.sql'),
+      b'\x00': ('', '.tar', None, '.sql')
+    }
+  else:
+    switcher = {
+      'xz': {
+        'compressionFlag': 'J',
+        'tarSuffix': '.tar.xz',
+        'compressionProgram': 'xz',
+        'customSuffix': '.xz'
+      },
+      'bzip': {
+        'compressionFlag': 'j',
+        'tarSuffix': '.tar.bz2',
+        'compressionProgram': 'bzip2',
+        'customSuffix': '.bz2'
+      },
+      'gzip': {
+        'compressionFlag': 'z',
+        'tarSuffix': '.tar.gz',
+        'compressionProgram': 'gzip',
+        'customSuffix': '.gz'
+      },
+      'none': {
+        'compressionFlag': '',
+        'tarSuffix': '.tar',
+        'compressionProgram': None,
+        'customSuffix': ''
+      },
+      b'\x00': {
+        'compressionFlag': '',
+        'tarSuffix': '.tar',
+        'compressionProgram': None,
+        'customSuffix': ''
+      }
+    }
   if trueBkpType not in switcher:
     print('Unknown value "%s". Compression will be turned off' % (bkpType))
   return switcher.get(trueBkpType, switcher.get(b'\x00'))
@@ -74,7 +108,7 @@ def checkTargetDirectoryStructure(fullPath):
 #This function is adding slash to the end of configuration directive
 def rsyncSanitizeDir(dirName):
   output = dirName
-  if dirName[-1] is not '/':
+  if dirName[-1] != '/':
     output = '%s/' % (dirName)
   return output
 
